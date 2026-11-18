@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Semáforo de la Igualdad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --azul:#14294A; --azul-2:#1D3A63; --oro:#C9A45C; --tinta:#16202E; --gris:#6B7686; --fondo:#F3F5F8; --borde:#E3E8EF;
+    --rojo:#D7392F; --rojo-osc:#5A1814; --ambar:#F2A71B; --ambar-osc:#5E4310; --verde:#25A55F; --verde-osc:#0F4428;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;background:var(--fondo);color:var(--tinta);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;
+    user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+  button{font:inherit;cursor:pointer;border:0}
+  .pantalla{position:fixed;inset:0;display:none;flex-direction:column}
+  .pantalla.activa{display:flex;animation:entra .4s ease-out}
+  @keyframes entra{from{opacity:0}to{opacity:1}}
+
+  /* ---------- Portada ---------- */
+  .portada{color:#fff;align-items:center;justify-content:center;text-align:center;padding:40px;gap:28px;
+    background:radial-gradient(90% 70% at 50% 0%,#24476F 0%,rgba(36,71,111,0) 70%),linear-gradient(170deg,#18304F 0%,#0B1A33 100%)}
+  .logo{height:64px;max-width:240px;object-fit:contain}
+  .sobre{font-size:15px;color:var(--oro);letter-spacing:.02em}
+  .portada h1{margin:0;font-size:clamp(40px,6.5vw,72px);font-weight:300;line-height:1.05;letter-spacing:-.02em}
+  .portada h1 strong{font-weight:600}
+  .portada p{margin:0;font-size:clamp(17px,2.2vw,22px);color:rgba(255,255,255,.75);max-width:640px;line-height:1.5}
+  .mini-sem{display:flex;gap:18px;padding:16px 22px;border-radius:999px;background:#0A1426;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  .mini-sem i{width:46px;height:46px;border-radius:50%;display:block;animation:parpadeo 3s infinite}
+  .mini-sem i:nth-child(1){background:var(--rojo);animation-delay:0s}
+  .mini-sem i:nth-child(2){background:var(--ambar);animation-delay:1s}
+  .mini-sem i:nth-child(3){background:var(--verde);animation-delay:2s}
+  @keyframes parpadeo{0%,25%{opacity:1;box-shadow:0 0 28px currentColor}33%,100%{opacity:.3}}
+  .leyenda{display:flex;gap:14px;flex-wrap:wrap;justify-content:center}
+  .leyenda span{display:flex;align-items:center;gap:10px;font-size:17px;color:rgba(255,255,255,.88);padding:10px 16px;border-radius:12px;background:rgba(255,255,255,.06)}
+  .leyenda b{width:16px;height:16px;border-radius:50%}
+  .btn-grande{background:var(--oro);color:#1B1406;font-size:24px;font-weight:600;padding:22px 64px;border-radius:999px;box-shadow:0 10px 30px -10px rgba(201,164,92,.7);transition:transform .1s}
+  .btn-grande:active{transform:scale(.97)}
+
+  /* ---------- Juego ---------- */
+  .juego{background:var(--fondo)}
+  .barra{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:var(--azul);color:#fff;gap:16px}
+  .barra .titulo{font-size:17px;font-weight:500}
+  .progreso{display:flex;gap:6px}
+  .progreso i{width:28px;height:6px;border-radius:99px;background:rgba(255,255,255,.2)}
+  .progreso i.ok{background:var(--verde)} .progreso i.mal{background:var(--rojo)} .progreso i.ahora{background:var(--oro)}
+  .puntos{font-size:17px;font-variant-numeric:tabular-nums}
+  .puntos b{font-size:22px;font-weight:600}
+  .salir{background:none;color:rgba(255,255,255,.7);font-size:15px;padding:8px 4px}
+
+  .zona{flex:1;display:flex;align-items:center;justify-content:center;gap:40px;padding:28px 36px;min-height:0}
+  .tarjeta{flex:1;max-width:760px;background:#fff;border-radius:24px;padding:44px 48px;box-shadow:0 20px 50px -24px rgba(20,41,74,.35);border:1px solid var(--borde);
+    display:flex;flex-direction:column;gap:22px;min-height:340px;justify-content:center}
+  .tarjeta .num{font-size:15px;color:var(--gris)}
+  .tarjeta .texto{font-size:clamp(24px,3vw,34px);line-height:1.38;font-weight:400;letter-spacing:-.01em}
+  .tarjeta .pregunta{font-size:18px;color:var(--gris)}
+
+  .semaforo{background:#0D1626;border-radius:44px;padding:22px;display:flex;flex-direction:column;gap:18px;box-shadow:0 24px 50px -20px rgba(0,0,0,.5),inset 0 0 0 2px #1E2A3E}
+  .luz{width:150px;height:150px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    color:#fff;font-weight:600;font-size:19px;text-align:center;line-height:1.15;position:relative;transition:transform .12s, filter .2s, box-shadow .2s}
+  .luz small{font-size:13.5px;font-weight:500;opacity:.92;max-width:120px}
+  .luz.rojo{background:radial-gradient(circle at 35% 30%,#FF7A6E 0%,var(--rojo) 55%,#9E2219 100%);box-shadow:0 0 0 4px var(--rojo-osc)}
+  .luz.ambar{background:radial-gradient(circle at 35% 30%,#FFD47A 0%,var(--ambar) 55%,#B57406 100%);box-shadow:0 0 0 4px var(--ambar-osc);color:#3A2600}
+  .luz.verde{background:radial-gradient(circle at 35% 30%,#7BE3A6 0%,var(--verde) 55%,#11703A 100%);box-shadow:0 0 0 4px var(--verde-osc)}
+  .luz:active{transform:scale(.95)}
+  .semaforo.respondido .luz{filter:grayscale(.85) brightness(.45)}
+  .semaforo.respondido .luz.elegida,.semaforo.respondido .luz.correcta{filter:none}
+  .luz.correcta{box-shadow:0 0 0 4px #fff,0 0 50px 10px rgba(255,255,255,.45)}
+  .luz.elegida:not(.correcta){outline:4px dashed rgba(255,255,255,.7);outline-offset:6px}
+
+  /* ---------- Resultado de cada caso ---------- */
+  .velo{position:fixed;inset:0;background:rgba(8,16,30,.55);display:none;align-items:flex-end;justify-content:center;padding:0 24px 28px;z-index:5}
+  .velo.ver{display:flex;animation:entra .25s ease-out}
+  .hoja{width:100%;max-width:900px;background:#fff;border-radius:24px;padding:30px 36px;display:flex;gap:26px;align-items:center;animation:sube .35s cubic-bezier(.2,.9,.3,1.2)}
+  @keyframes sube{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
+  .icono{width:84px;height:84px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  .hoja .cont{flex:1;display:flex;flex-direction:column;gap:8px}
+  .hoja h2{margin:0;font-size:30px;font-weight:600;letter-spacing:-.01em}
+  .hoja .resp{font-size:18px;font-weight:500}
+  .hoja .exp{font-size:18px;line-height:1.5;color:#3B4656}
+  .btn-sig{background:var(--azul);color:#fff;font-size:20px;font-weight:600;padding:20px 34px;border-radius:16px;flex-shrink:0}
+  .btn-sig:active{transform:scale(.97)}
+
+  /* ---------- Final ---------- */
+  .final{color:#fff;align-items:center;justify-content:center;text-align:center;padding:40px;gap:22px;
+    background:radial-gradient(90% 70% at 50% 0%,#24476F 0%,rgba(36,71,111,0) 70%),linear-gradient(170deg,#18304F 0%,#0B1A33 100%)}
+  .final .marcador{font-size:clamp(90px,15vw,150px);font-weight:200;line-height:1;letter-spacing:-.04em}
+  .final .marcador span{font-size:.4em;color:rgba(255,255,255,.55)}
+  .final h2{margin:0;font-size:clamp(28px,4vw,42px);font-weight:500}
+  .final p{margin:0;font-size:20px;color:rgba(255,255,255,.75);max-width:620px;line-height:1.5}
+  .estrellas{display:flex;gap:10px}
+  .estrellas i{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15)}
+  .estrellas i.si{background:var(--oro)}
+  .cuenta{font-size:15px;color:rgba(255,255,255,.55)}
+
+  .pc{position:fixed;top:14px;right:16px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);border-radius:999px;padding:9px 16px;font-size:14px;z-index:3}
+
+  /* Tablet vertical o pantallas angostas */
+  @media (max-aspect-ratio:1/1){
+    .zona{flex-direction:column;gap:28px;justify-content:center}
+    .tarjeta{flex:0 0 auto;width:100%;max-width:none;min-height:38vh;padding:44px 40px}
+    .tarjeta .texto{font-size:clamp(26px,4.4vw,40px)}
+    .semaforo{flex-direction:row;border-radius:999px;padding:18px 22px}
+    .luz{width:min(170px,26vw);height:min(170px,26vw)}
+    .hoja{flex-wrap:wrap}
+    .btn-sig{width:100%}
+  }
+  @media (max-height:640px) and (min-aspect-ratio:1/1){
+    .luz{width:118px;height:118px;font-size:16px} .luz small{font-size:12px}
+    .tarjeta{padding:30px 34px;min-height:0}
+  }
+  @media (max-width:560px){ .progreso{display:none} .barra{padding:14px 18px} .hoja{padding:24px} }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Portada -->
+<section class="pantalla portada activa" id="p-portada">
+  <img class="logo" src="https://lh3.googleusercontent.com/d/1Le4XlcpzYshyDBkJt1GbM8w5WuW35UAA" alt="" onerror="this.remove()">
+  <p class="sobre">Campaña CREI · Igualdad</p>
+  <h1>Semáforo de la <strong>Igualdad</strong></h1>
+  <div class="mini-sem" aria-hidden="true"><i></i><i></i><i></i></div>
+  <p>Lee cada situación y elige el color del semáforo.</p>
+  <div class="leyenda">
+    <span><b style="background:var(--verde)"></b>Verde · Hay igualdad</span>
+    <span><b style="background:var(--ambar)"></b>Ámbar · Igualdad a medias</span>
+    <span><b style="background:var(--rojo)"></b>Rojo · No hay igualdad</span>
+  </div>
+  <button class="btn-grande" id="b-empezar">Empezar</button>
+</section>
+
+<!-- Juego -->
+<section class="pantalla juego" id="p-juego">
+  <div class="barra">
+    <span class="titulo">Semáforo de la Igualdad</span>
+    <div class="progreso" id="progreso"></div>
+    <span class="puntos">Aciertos <b id="aciertos">0</b></span>
+    <button class="salir" id="b-salir">Salir</button>
+  </div>
+  <div class="zona">
+    <div class="tarjeta">
+      <span class="num" id="num"></span>
+      <div class="texto" id="texto"></div>
+      <span class="pregunta">¿Qué color le pones a esta situación?</span>
+    </div>
+    <div class="semaforo" id="semaforo">
+      <button class="luz rojo" data-c="r">Rojo<small>No hay igualdad</small></button>
+      <button class="luz ambar" data-c="a">Ámbar<small>Igualdad a medias</small></button>
+      <button class="luz verde" data-c="v">Verde<small>Hay igualdad</small></button>
+    </div>
+  </div>
+</section>
+
+<div class="velo" id="velo">
+  <div class="hoja">
+    <div class="icono" id="icono"></div>
+    <div class="cont">
+      <h2 id="r-titulo"></h2>
+      <span class="resp" id="r-resp"></span>
+      <span class="exp" id="r-exp"></span>
+    </div>
+    <button class="btn-sig" id="b-sig">Siguiente</button>
+  </div>
+</div>
+
+<!-- Final -->
+<section class="pantalla final" id="p-final">
+  <div class="marcador" id="f-marcador"></div>
+  <div class="estrellas" id="f-estrellas"></div>
+  <h2 id="f-titulo"></h2>
+  <p id="f-texto"></p>
+  <button class="btn-grande" id="b-otra">Siguiente jugador</button>
+  <span class="cuenta" id="f-cuenta"></span>
+</section>
+
+<button class="pc" id="b-pc">Pantalla completa</button>
+
+<script>
+/* ============ Casos ============
+   r = rojo (no hay igualdad) · a = ámbar (igualdad a medias) · v = verde (hay igualdad)  */
+var CASOS = [
+  // Verde
+  ['v','En la convocatoria para operador de scoop pueden postular hombres y mujeres, con los mismos requisitos y la misma prueba práctica.','Todos compiten en las mismas condiciones y se elige por capacidad, no por género.'],
+  ['v','El supervisor reparte las guardias de noche por rotación, sin importar si el trabajador es joven, mayor, hombre o mujer.','La carga se reparte con una regla clara que vale para todos.'],
+  ['v','La empresa compra botas, guantes y mamelucos en tallas para mujeres, para que el EPP les quede bien.','Un EPP a la medida protege igual a todas las personas. Igualdad también es seguridad.'],
+  ['v','Dos topógrafos con el mismo cargo y la misma experiencia ganan el mismo sueldo, aunque uno es hombre y la otra es mujer.','Igual trabajo, igual pago.'],
+  ['v','Un trabajador pide su licencia por paternidad y su jefe la aprueba sin comentarios ni malas caras.','El cuidado de los hijos es responsabilidad de ambos padres, y la licencia es un derecho.'],
+  ['v','En la charla de 5 minutos, el supervisor explica en castellano y también en quechua para que todos entiendan.','Si todos entienden, todos se cuidan igual. Respetar la lengua de cada uno incluye.'],
+  ['v','Un compañero con discapacidad auditiva recibe las alertas de emergencia también con luces y mensajes en el celular.','Se adapta el aviso para que él tenga la misma protección que los demás.'],
+  ['v','Para el ascenso a jefe de guardia se evalúa a todos los candidatos con los mismos criterios, publicados antes de postular.','Reglas claras y conocidas por todos: así se asciende por mérito.'],
+  ['v','Los cursos de manejo de equipos se ofrecen a todo el personal de la guardia, no solo a los "de confianza".','Todos tienen la misma oportunidad de aprender y crecer.'],
+  ['v','En el comedor, practicantes, operarios y gerentes hacen la misma cola y reciben el mismo menú.','El cargo no cambia el trato en lo básico.'],
+  ['v','Una compañera vuelve de su licencia de maternidad a su mismo puesto, con lactario y su hora de lactancia.','Ser madre no le quita su lugar ni sus derechos.'],
+  ['v','Un trabajador de 57 años es elegido para un curso de nuevas tecnologías porque cumple los requisitos.','La edad no es un límite para aprender. Se lo eligió por su perfil.'],
+  ['v','Una vecina de la comunidad del entorno postula como técnica y la contratan porque cumple el perfil.','Se elige por capacidad, venga de donde venga.'],
+  ['v','En la reunión, la jefa pide la opinión de todos, incluso de los ayudantes que casi no hablan.','Todas las voces valen y se toman en cuenta.'],
+  ['v','Un trabajador pide cambiar su día libre por motivos religiosos y se coordina un cambio con un compañero, sin perjudicarlo.','Se respeta su creencia con un ajuste razonable que no afecta a nadie.'],
+  ['v','En el campamento hay vestuarios para mujeres y para hombres, con las mismas condiciones.','Mismas instalaciones, mismas condiciones para todos.'],
+  ['v','El bono por producción se calcula con la misma fórmula para todas las guardias.','Una regla igual para todos evita favoritismos.'],
+  ['v','Un compañero se burla del acento de otro y el supervisor lo detiene y pide respeto.','Frenar la burla protege la dignidad de todos.'],
+  ['v','Antes de pasar los CV al área, Recursos Humanos les quita la foto, la edad y el estado civil.','Así se evalúa la experiencia y no datos que no tienen que ver con el puesto.'],
+  ['v','A un compañero en silla de ruedas le adaptaron el almacén: hay rampa y los estantes están a su altura.','Con los ajustes necesarios puede trabajar en igualdad de condiciones.'],
+
+  // Ámbar
+  ['a','En el campamento hay vestuario para mujeres, pero en la zona de mina solo hay baños para hombres.','Es un avance, pero las mujeres que trabajan en mina todavía no tienen las mismas condiciones.'],
+  ['a','La empresa contrata más mujeres como operadoras, pero todavía no compra EPP en sus tallas.','Se abren puertas, pero sin un EPP adecuado ellas trabajan con menos protección.'],
+  ['a','El jefe dice que todos pueden postular al ascenso, pero no publica los criterios y decide solo él.','La puerta está abierta, pero sin reglas claras la decisión puede ser injusta.'],
+  ['a','La capacitación es para todos, pero solo se dicta en el turno de día y los del turno noche no pueden ir.','La invitación es para todos, pero no todos pueden asistir.'],
+  ['a','La charla de seguridad es para todos, pero solo en castellano, aunque hay compañeros que entienden mejor el quechua.','Todos están presentes, pero no todos entienden igual.'],
+  ['a','Se aprueba la licencia por paternidad, pero el jefe bromea con que "se va de vacaciones".','Se respeta el derecho, pero la burla le resta valor y desanimará a otros a pedirla.'],
+  ['a','La empresa tiene una política contra el acoso, pero nadie sabe cómo presentar una denuncia.','Existe la regla, pero si nadie la conoce no protege a nadie.'],
+  ['a','En la reunión se invita a las mujeres a opinar, pero al final solo se toman en cuenta las ideas de los hombres.','Tienen voz, pero sus ideas no pesan igual.'],
+  ['a','Practicantes y contratistas pueden usar el comedor, pero en un horario aparte, cuando ya queda poca comida.','Tienen acceso, pero no en las mismas condiciones.'],
+  ['a','Una compañera vuelve de la licencia de maternidad a su puesto, pero no hay un lugar adecuado para extraerse leche.','Se respeta su puesto, pero falta lo necesario para que ejerza su derecho a la lactancia.'],
+  ['a','A los trabajadores mayores se les inscribe en el curso digital, pero sin el apoyo ni el tiempo extra de práctica que algunos necesitan.','Se los incluye, pero sin los apoyos no tienen la misma oportunidad de aprender.'],
+  ['a','Se contrata a una persona con discapacidad, pero no se adapta su puesto y depende de sus compañeros para todo.','Contratarla es positivo, pero sin ajustes no puede trabajar en igualdad.'],
+  ['a','Una compañera es jefa, pero en las reuniones con contratistas siempre la acompaña un hombre "para que la respeten".','Tiene el cargo, pero no la misma autoridad que se le reconocería a un hombre.'],
+  ['a','La empresa celebra el Día de la Mujer, pero el resto del año no revisa si hay diferencias de sueldo.','El gesto es bueno, pero la igualdad se demuestra todo el año.'],
+  ['a','Las vacantes internas se publican para todos, pero solo por correo, y el personal de planta sin correo no se entera.','La oportunidad es para todos, pero no a todos les llega.'],
+
+  // Rojo
+  ['r','Un supervisor no deja que una operadora maneje el volquete porque "ese trabajo es para hombres".','Se le quita una oportunidad por ser mujer, no por su capacidad.'],
+  ['r','En la entrevista le preguntan a una postulante si piensa tener hijos pronto.','Esa pregunta no se le hace a un hombre y no tiene que ver con el puesto. Es discriminación.'],
+  ['r','Dos ensayadores con el mismo cargo y la misma experiencia ganan distinto porque uno es hombre y la otra es mujer.','Igual trabajo debe tener igual pago.'],
+  ['r','Se burlan de un compañero por hablar quechua y le dicen que "hable bien".','Su lengua es parte de su identidad. Burlarse de ella es discriminación.'],
+  ['r','Para un curso en Lima, el jefe solo manda a sus amigos de confianza.','Las oportunidades se reparten por amistad y no por mérito.'],
+  ['r','Descartan a un postulante de 50 años porque "ya está mayor para aprender".','Se lo juzga por su edad y no por su capacidad.'],
+  ['r','A un trabajador de la comunidad le dicen que solo puede ser ayudante, aunque tiene título técnico.','Se le pone un límite por su origen y no por su preparación.'],
+  ['r','En todas las reuniones le piden a la única mujer que sirva el café y tome las notas.','Se le asignan tareas por ser mujer, no por su rol.'],
+  ['r','En el WhatsApp de la guardia se hacen chistes sobre la orientación sexual de un compañero.','Burlarse de alguien por quién es daña su dignidad y el clima de todos.'],
+  ['r','Una trabajadora vuelve de su licencia de maternidad y la pasan a un puesto de menor nivel sin explicación.','Se la castiga por ser madre. Es discriminación.'],
+  ['r','Le niegan una rampa a un compañero con discapacidad porque "sale muy caro".','Sin ese ajuste no puede trabajar en igualdad de condiciones.'],
+  ['r','Los contratistas no pueden usar los mismos baños ni el bus de personal, aunque trabajan en la misma zona.','Las condiciones básicas deberían ser las mismas para todos los que trabajan en la operación.'],
+  ['r','En la evaluación de desempeño le bajan la nota a un trabajador por su religión.','Se lo evalúa por sus creencias y no por su trabajo.'],
+  ['r','En lugar de hablar de su trabajo, critican la forma de vestir y el aspecto físico de una compañera.','Se la juzga por su apariencia y no por lo que aporta.'],
+  ['r','El ascenso se lo dan al candidato menos calificado porque "los hombres aguantan más la presión".','Un prejuicio pesa más que el mérito.'],
+  ['r','En el campamento a los operarios les dan los cuartos más lejanos y sin agua caliente, aunque hay cuartos libres.','El cargo no debería decidir si alguien tiene condiciones dignas de descanso.'],
+  ['r','El supervisor solo les grita a los trabajadores de provincia y trata con amabilidad a los que vienen de Lima.','Trata distinto según el origen. Todos merecen el mismo respeto.']
+];
+
+var NOMBRE = { v: 'Verde · Hay igualdad', a: 'Ámbar · Igualdad a medias', r: 'Rojo · No hay igualdad' };
+var COLOR = { v: 'var(--verde)', a: 'var(--ambar)', r: 'var(--rojo)' };
+var POR_RONDA = 10;
+
+/* ---------- Mazo en bucle: no se repiten casos hasta haber pasado por todos ---------- */
+function guardar(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function leer(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+function barajar(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+var mazo = leer('sem-mazo');
+if (!mazo || !mazo.orden || mazo.orden.length !== CASOS.length) mazo = { orden: barajar(CASOS.map(function (_, i) { return i; })), pos: 0 };
+var jugadores = leer('sem-jugadores') || 0;
+
+function sacarCaso() {
+  if (mazo.pos >= mazo.orden.length) {
+    var ultimo = mazo.orden[mazo.orden.length - 1];
+    mazo.orden = barajar(mazo.orden.slice());
+    if (mazo.orden[0] === ultimo) mazo.orden.push(mazo.orden.shift());
+    mazo.pos = 0;
+  }
+  var i = mazo.orden[mazo.pos++];
+  guardar('sem-mazo', mazo);
+  return CASOS[i];
+}
+
+/* ---------- Juego ---------- */
+var $ = function (id) { return document.getElementById(id); };
+var ronda = { n: 0, aciertos: 0, marcas: [], caso: null, bloqueado: false };
+var temporizador = null;
+
+function ver(id) {
+  document.querySelectorAll('.pantalla').forEach(function (p) { p.classList.toggle('activa', p.id === id); });
+  $('b-pc').style.display = id === 'p-juego' ? 'none' : '';
+}
+
+function empezar() {
+  ronda = { n: 0, aciertos: 0, marcas: [], caso: null, bloqueado: false };
+  $('aciertos').textContent = '0';
+  ver('p-juego');
+  siguiente();
+}
+
+function pintarProgreso() {
+  var h = '';
+  for (var i = 0; i < POR_RONDA; i++) h += '<i class="' + (ronda.marcas[i] || (i === ronda.n - 1 ? 'ahora' : '')) + '"></i>';
+  $('progreso').innerHTML = h;
+}
+
+function siguiente() {
+  $('velo').classList.remove('ver');
+  if (ronda.n >= POR_RONDA) return terminar();
+  ronda.caso = sacarCaso();
+  ronda.n++;
+  ronda.bloqueado = false;
+  $('num').textContent = 'Situación ' + ronda.n + ' de ' + POR_RONDA;
+  $('texto').textContent = ronda.caso[1];
+  var s = $('semaforo'); s.classList.remove('respondido');
+  s.querySelectorAll('.luz').forEach(function (l) { l.classList.remove('elegida', 'correcta'); });
+  pintarProgreso();
+}
+
+$('semaforo').addEventListener('click', function (ev) {
+  var luz = ev.target.closest('.luz');
+  if (!luz || ronda.bloqueado) return;
+  ronda.bloqueado = true;
+  var elegido = luz.dataset.c, correcto = ronda.caso[0], bien = elegido === correcto;
+  if (bien) ronda.aciertos++;
+  ronda.marcas[ronda.n - 1] = bien ? 'ok' : 'mal';
+  $('aciertos').textContent = ronda.aciertos;
+  pintarProgreso();
+
+  var s = $('semaforo'); s.classList.add('respondido');
+  luz.classList.add('elegida');
+  s.querySelector('[data-c="' + correcto + '"]').classList.add('correcta');
+
+  $('icono').style.background = bien ? COLOR[correcto] : '#8A94A3';
+  $('icono').innerHTML = bien
+    ? '<svg width="44" height="44" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    : '<svg width="40" height="40" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  $('r-titulo').textContent = bien ? '¡Correcto!' : 'Casi…';
+  $('r-resp').textContent = (bien ? '' : 'La respuesta es ') + NOMBRE[correcto];
+  $('r-resp').style.color = correcto === 'a' ? '#9A6A00' : COLOR[correcto];
+  $('r-exp').textContent = ronda.caso[2];
+  $('b-sig').textContent = ronda.n >= POR_RONDA ? 'Ver resultado' : 'Siguiente';
+  setTimeout(function () { $('velo').classList.add('ver'); }, 450);
+});
+
+$('b-sig').addEventListener('click', siguiente);
+
+function terminar() {
+  jugadores++; guardar('sem-jugadores', jugadores);
+  var a = ronda.aciertos;
+  $('f-marcador').innerHTML = a + '<span> / ' + POR_RONDA + '</span>';
+  var h = ''; for (var i = 0; i < POR_RONDA; i++) h += '<i class="' + (i < a ? 'si' : '') + '"></i>';
+  $('f-estrellas').innerHTML = h;
+  var t = a >= 9 ? ['¡Experto en igualdad!', 'Reconoces muy bien cuándo hay igualdad y cuándo falta. Ayuda a que en tu área se note.']
+    : a >= 7 ? ['¡Muy bien!', 'Tienes buen ojo. Fíjate en las situaciones ámbar: ahí está la igualdad que todavía falta completar.']
+    : a >= 5 ? ['¡Buen intento!', 'Hay situaciones que parecen justas pero se quedan a medias. Juntos podemos detectarlas.']
+    : ['¡Gracias por jugar!', 'La igualdad se aprende en el día a día. Cada situación que reconocemos es un paso.'];
+  $('f-titulo').textContent = t[0];
+  $('f-texto').textContent = t[1];
+  $('f-cuenta').textContent = jugadores + (jugadores === 1 ? ' persona ya jugó' : ' personas ya jugaron');
+  ver('p-final');
+  clearTimeout(temporizador);
+  temporizador = setTimeout(function () { ver('p-portada'); }, 45000); // si nadie toca, vuelve a la portada
+}
+
+$('b-empezar').addEventListener('click', empezar);
+$('b-otra').addEventListener('click', function () { clearTimeout(temporizador); ver('p-portada'); });
+$('b-salir').addEventListener('click', function () { $('velo').classList.remove('ver'); ver('p-portada'); });
+
+$('b-pc').addEventListener('click', function () {
+  var d = document.documentElement, f = d.requestFullscreen || d.webkitRequestFullscreen;
+  if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+  if (f) { try { var p = f.call(d); if (p && p.catch) p.catch(function () {}); } catch (e) {} }
+});
+</script>
+</body>
+</html>
